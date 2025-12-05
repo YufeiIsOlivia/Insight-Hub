@@ -1,0 +1,14 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+uploads/
+vector_db/
+*.pdf
+.venv/
+venv/
+env/
+*.log
+
