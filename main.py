@@ -14,6 +14,7 @@ from pathlib import Path
 from backend.pdf_parser import PDFParser
 from backend.vector_store import VectorStore
 from backend.rag_system import RAGSystem
+import time
 
 # Load environment variables
 load_dotenv()
@@ -47,12 +48,22 @@ def get_rag_system():
     """Get or initialize RAG system."""
     global rag_system
     if rag_system is None:
-        # Try OpenAI first (recommended), then OpenRouter as fallback
+        # Check if we should force OpenRouter (useful for evaluation/testing different models)
+        force_openrouter = os.getenv("FORCE_OPENROUTER", "false").lower() == "true"
+        
         openai_key = os.getenv("OPENAI_API_KEY")
         openrouter_key = os.getenv("OPENROUTER_API_KEY")
         
-        if openai_key:
-            # Use OpenAI API (recommended)
+        if force_openrouter:
+            # Force OpenRouter (for evaluation/testing different models)
+            if not openrouter_key:
+                raise HTTPException(
+                    status_code=500,
+                    detail="OpenRouter API key is required when FORCE_OPENROUTER=true. Set OPENROUTER_API_KEY in .env file."
+                )
+            rag_system = RAGSystem(vector_store, openrouter_key, use_openrouter=True)
+        elif openai_key:
+            # Use OpenAI API (recommended for normal use)
             rag_system = RAGSystem(vector_store, openai_key, use_openrouter=False)
         elif openrouter_key:
             # Fallback to OpenRouter
@@ -73,6 +84,8 @@ async def read_root():
         with open(html_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>Frontend not found</h1>")
+
+
 
 
 @app.post("/api/upload")
@@ -127,7 +140,7 @@ async def ask_question(data: dict):
     Ask a question about the uploaded PDFs.
     
     Args:
-        data: Dictionary with 'question' key
+        data: Dictionary with 'question' key and optional 'model_name' key
         
     Returns:
         JSON response with answer and citations
@@ -136,14 +149,52 @@ async def ask_question(data: dict):
     if not question:
         raise HTTPException(status_code=400, detail="Question is required")
     
+    model_name = data.get("model_name")  # Optional model override
+    
     try:
         rag = get_rag_system()
-        result = rag.ask_question(question)
+        
+        # Format model name for API call
+        api_model_name = None
+        if model_name:
+            if rag.use_openrouter:
+                # Format for OpenRouter - use same logic as notebook
+                # If already has provider prefix, check if it needs conversion
+                if '/' in model_name:
+                    # Handle special cases for OpenRouter model IDs
+                    # OpenRouter uses claude-3-5-sonnet (with hyphen) not claude-3.5-sonnet (with dot)
+                    if 'claude-3.5' in model_name:
+                        api_model_name = model_name.replace('claude-3.5', 'claude-3-5')
+                    else:
+                        # Keep model name as-is if it already has provider prefix
+                        api_model_name = model_name
+                else:
+                    # Map common model names to providers
+                    if model_name.startswith('gpt'):
+                        api_model_name = f"openai/{model_name}"
+                    elif model_name.startswith('claude'):
+                        # OpenRouter uses claude-3-5-sonnet (hyphen) not claude-3.5-sonnet (dot)
+                        formatted = model_name.replace('3.5', '3-5')
+                        api_model_name = f"anthropic/{formatted}"
+                    elif model_name.startswith('llama'):
+                        api_model_name = f"meta/{model_name}"
+                    elif model_name.startswith('gemini'):
+                        api_model_name = f"google/{model_name}"
+                    else:
+                        # Default: assume OpenAI format
+                        api_model_name = f"openai/{model_name}"
+            else:
+                # For OpenAI direct API, use model name as-is
+                api_model_name = model_name
+        
+        # Ask question with optional model override
+        result = rag.ask_question(question, model_name=api_model_name)
         
         return JSONResponse({
             "status": "success",
             "answer": result["answer"],
-            "citations": result["citations"]
+            "citations": result["citations"],
+            "retrieved_docs": result.get("retrieved_docs", [])  # Include retrieved documents for evaluation
         })
     
     except Exception as e:
@@ -160,12 +211,17 @@ async def get_status():
         except Exception:
             total_docs = 0
         
+        # Check actual RAG system configuration
+        rag = get_rag_system()
+        force_openrouter = os.getenv("FORCE_OPENROUTER", "false").lower() == "true"
+        
         return JSONResponse({
             "status": "success",
             "total_documents": total_docs,
             "has_api_key": bool(os.getenv("OPENAI_API_KEY") or os.getenv("OPENROUTER_API_KEY")),
-            "using_openai": bool(os.getenv("OPENAI_API_KEY")),
-            "using_openrouter": bool(os.getenv("OPENROUTER_API_KEY") and not os.getenv("OPENAI_API_KEY"))
+            "using_openai": not rag.use_openrouter,
+            "using_openrouter": rag.use_openrouter,
+            "force_openrouter": force_openrouter
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting status: {str(e)}")
@@ -175,10 +231,28 @@ async def get_status():
 async def clear_documents():
     """Clear all uploaded documents from the vector store."""
     try:
+        # Delete collection from ChromaDB
         vector_store.delete_collection()
-        # Also clear uploaded files
+        
+        # Clear uploaded PDF files
         for file in UPLOAD_DIR.glob("*.pdf"):
             file.unlink()
+        
+        # Clear vector database directory completely
+        # ChromaDB's delete_collection() may leave files behind, so we need to clean them up
+        if VECTOR_DB_DIR.exists():
+            # Remove all files and subdirectories in vector_db
+            for item in VECTOR_DB_DIR.iterdir():
+                if item.is_file():
+                    item.unlink()
+                elif item.is_dir():
+                    shutil.rmtree(item)
+        
+        # Reinitialize the collection (empty)
+        vector_store.collection = vector_store.client.get_or_create_collection(
+            name="pdf_documents",
+            metadata={"hnsw:space": "cosine"}
+        )
         
         return JSONResponse({
             "status": "success",
@@ -186,6 +260,8 @@ async def clear_documents():
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error clearing documents: {str(e)}")
+
+
 
 
 @app.post("/api/generate-quiz")

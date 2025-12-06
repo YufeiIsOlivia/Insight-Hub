@@ -821,9 +821,6 @@
                             <div class="message-label">AI</div>
                             <div class="answer-text">${formatMarkdown(data.answer)}</div>
                             ${citationsHTML}
-                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
-                                ${getFeedbackButtons()}
-                            </div>
                         </div>
                     `;
                     chatContainer.appendChild(answerDiv);
@@ -867,19 +864,6 @@
                 document.getElementById('chatContainer').innerHTML = '';
             }
         }
-
-        function getFeedbackButtons() {
-            return `
-                <div style="display: flex; gap: 10px; align-items: center; font-family: 'Kalam', cursive;">
-                    <span style="color: #333; font-size: 1em; margin-right: 10px; font-weight: 600;">Was this helpful?</span>
-                    <button onclick="this.style.background='#333'; this.style.color='white'; this.style.borderColor='#000'; this.nextElementSibling.style.background='white'; this.nextElementSibling.style.color='#333'; this.nextElementSibling.style.borderColor='#666';" 
-                            style="background: white; border: 3px solid #333; padding: 8px 15px; border-radius: 0; cursor: pointer; font-size: 1.3em; transition: all 0.2s; transform: rotate(-0.3deg); font-family: 'Kalam', cursive; box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);">👍</button>
-                    <button onclick="this.style.background='#333'; this.style.color='white'; this.style.borderColor='#000'; this.previousElementSibling.style.background='white'; this.previousElementSibling.style.color='#333'; this.previousElementSibling.style.borderColor='#666';" 
-                            style="background: white; border: 3px solid #333; padding: 8px 15px; border-radius: 0; cursor: pointer; font-size: 1.3em; transition: all 0.2s; transform: rotate(0.3deg); font-family: 'Kalam', cursive; box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);">👎</button>
-                </div>
-            `;
-        }
-        
 
         async function clearDocuments() {
             if (!confirm('Are you sure you want to clear all uploaded documents?')) {

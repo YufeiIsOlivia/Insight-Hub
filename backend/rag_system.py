@@ -123,7 +123,7 @@ class RAGSystem:
         
         return retrieved_chunks
     
-    def generate_answer(self, question: str, context_chunks: List[Dict], question_type: str = 'Default') -> Dict[str, any]:
+    def generate_answer(self, question: str, context_chunks: List[Dict], question_type: str = 'Default', model_name: Optional[str] = None) -> Dict[str, any]:
         """
         Generate an answer to the question using retrieved context.
         
@@ -261,10 +261,13 @@ Question: {question}
 
 Answer the question based on the context above. Make sure to cite ALL relevant sources (Source 1 through Source {num_sources}) that contain information relevant to the answer:"""
         
+        # Use specified model or default
+        model_to_use = model_name if model_name else self.llm_model
+        
         # Generate answer using LLM (OpenRouter or OpenAI)
         try:
             response = self.client.chat.completions.create(
-                model=self.llm_model,
+                model=model_to_use,
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant that answers questions based on provided context. Always format your answers using Markdown with proper spacing, bold text for key terms, lists, and clear paragraph breaks. Always cite your sources."},
                     {"role": "user", "content": prompt}
@@ -321,9 +324,20 @@ Answer the question based on the context above. Make sure to cite ALL relevant s
             # If no sources were explicitly cited, return all (but this shouldn't happen with improved prompt)
             filtered_citations = citations
         
+        # Build retrieved context for evaluation
+        retrieved_docs = []
+        for chunk in context_chunks:
+            metadata = chunk.get('metadata', {})
+            retrieved_docs.append({
+                'text': chunk.get('text', ''),
+                'pdf_filename': metadata.get('pdf_filename', 'Unknown'),
+                'page': metadata.get('page', 'Unknown')
+            })
+        
         return {
             'answer': answer,
-            'citations': filtered_citations
+            'citations': filtered_citations,
+            'retrieved_docs': retrieved_docs  # Add retrieved documents for evaluation
         }
     
     def classify_question_type(self, question: str) -> Tuple[str, int]:
@@ -412,13 +426,14 @@ Answer the question based on the context above. Make sure to cite ALL relevant s
         # Default for all other questions
         return ('Default', 25)  # 20-30, use 25 as middle
     
-    def ask_question(self, question: str, n_results: int = None) -> Dict[str, any]:
+    def ask_question(self, question: str, n_results: int = None, model_name: Optional[str] = None) -> Dict[str, any]:
         """
         Complete RAG pipeline: retrieve relevant chunks and generate answer.
         
         Args:
             question: User's question
             n_results: Number of relevant chunks to retrieve (if None, auto-determined by question type)
+            model_name: Optional model name to use (overrides default)
             
         Returns:
             Dictionary with answer and citations
@@ -434,7 +449,7 @@ Answer the question based on the context above. Make sure to cite ALL relevant s
         relevant_chunks = self.retrieve_relevant_chunks(question, n_results=n_results)
         
         # Generate answer with question type-specific prompt
-        result = self.generate_answer(question, relevant_chunks, question_type=question_type)
+        result = self.generate_answer(question, relevant_chunks, question_type=question_type, model_name=model_name)
         
         return result
     

@@ -27,13 +27,9 @@ class VectorStore:
             settings=Settings(anonymized_telemetry=False)
         )
         
-        # Delete existing collection if it exists (to avoid dimension mismatch)
-        try:
-            self.client.delete_collection(name="pdf_documents")
-        except:
-            pass  # Collection doesn't exist, that's fine
-        
-        # Create new collection
+        # Get or create collection (preserve existing data)
+        # Note: If you need to reset the collection due to dimension mismatch,
+        # use the delete_collection() method explicitly
         self.collection = self.client.get_or_create_collection(
             name="pdf_documents",
             metadata={"hnsw:space": "cosine"}
