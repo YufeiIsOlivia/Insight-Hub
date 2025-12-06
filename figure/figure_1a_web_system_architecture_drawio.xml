@@ -1,0 +1,79 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" version="29.2.4">
+  <diagram name="Web System Architecture" id="web-system-architecture">
+    <mxGraphModel dx="946" dy="610" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="pdf-upload" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" value="PDF Upload" vertex="1">
+          <mxGeometry height="60" width="120" x="40" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="pdf-parser" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" value="PDF Parser&#xa;(PyPDF2)" vertex="1">
+          <mxGeometry height="60" width="120" x="40" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="text-chunks" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" value="Text Chunks&#xa;(500-1000 chars)" vertex="1">
+          <mxGeometry height="60" width="120" x="40" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="embedding" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" value="Embedding Model&#xa;(text-embedding-ada-002)" vertex="1">
+          <mxGeometry height="60" width="180" x="220" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="vector-store" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" value="Vector Store&#xa;(ChromaDB)" vertex="1">
+          <mxGeometry height="60" width="140" x="240" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="user-query" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" value="User Query" vertex="1">
+          <mxGeometry height="60" width="120" x="680" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="query-embedding" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" value="Query Embedding" vertex="1">
+          <mxGeometry height="60" width="120" x="680" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="retrieval" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1" value="Retrieval&#xa;(Similarity Search)" vertex="1">
+          <mxGeometry height="60" width="140" x="460" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="rag-system" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1" value="RAG System&#xa;(Context Assembly)" vertex="1">
+          <mxGeometry height="60" width="140" x="460" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="llm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1" value="LLM" vertex="1">
+          <mxGeometry height="60" width="140" x="460" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="answer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" value="Answer + Citations" vertex="1">
+          <mxGeometry height="60" width="140" x="460" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="web-interface" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" value="Web Interface" vertex="1">
+          <mxGeometry height="60" width="120" x="470" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow1" edge="1" parent="1" source="pdf-upload" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#1ba1e2" target="pdf-parser" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow2" edge="1" parent="1" source="pdf-parser" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#1ba1e2" target="text-chunks" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow3" edge="1" parent="1" source="text-chunks" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#1ba1e2" target="embedding" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow4" edge="1" parent="1" source="embedding" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#1ba1e2" target="vector-store" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow5" edge="1" parent="1" source="user-query" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#1ba1e2" target="query-embedding" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow6" edge="1" parent="1" source="query-embedding" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#1ba1e2" target="retrieval" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow7" edge="1" parent="1" source="vector-store" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#1ba1e2" target="retrieval" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow8" edge="1" parent="1" source="retrieval" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#1ba1e2" target="rag-system" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow9" edge="1" parent="1" source="rag-system" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#1ba1e2" target="llm" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow10" edge="1" parent="1" source="llm" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#1ba1e2" target="answer" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow11" edge="1" parent="1" source="answer" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#1ba1e2" target="web-interface" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
