@@ -4,8 +4,9 @@ This folder contains tools for evaluating different LLM models on the RAG system
 
 ## Files
 
+- `generate_qa_dataset.ipynb`: Notebook for automatically generating QA datasets from uploaded PDFs
 - `llm_judge_evaluation.ipynb`: Main evaluation notebook that tests multiple models via OpenRouter and uses an LLM judge to score answers
-- `qa_dataset_example.json`: Example QA dataset format
+- `qa_dataset.json`: Generated QA dataset (created by generate_qa_dataset.ipynb)
 
 ## Quick Start
 
@@ -14,8 +15,8 @@ This folder contains tools for evaluating different LLM models on the RAG system
 Add to your `.env` file in the project root:
 
 ```bash
-OPENAI_API_KEY=sk-...              # For judge model (GPT-4)
-OPENROUTER_API_KEY=sk-or-v1-...    # For testing different models
+OPENAI_API_KEY=sk-...              # For embeddings (text-embedding-ada-002)
+OPENROUTER_API_KEY=sk-or-v1-...    # For testing models and judge model (Mistral Large)
 FORCE_OPENROUTER=true              # Force OpenRouter for all model calls
 ```
 
@@ -43,7 +44,7 @@ You have two options:
 4. The dataset will be saved as `qa_dataset.json`
 
 #### Option B: Manual Creation
-Create a JSON file with your questions. See `qa_dataset_example.json` for format:
+Create a JSON file with your questions. The format should be:
 
 ```json
 [
@@ -55,6 +56,8 @@ Create a JSON file with your questions. See `qa_dataset_example.json` for format
   }
 ]
 ```
+
+Note: The `answer` field is optional as it's not used in evaluation. Only `question` and `context` are required for evaluation.
 
 ### 5. Run Evaluation
 
@@ -75,16 +78,14 @@ See [OpenRouter Models](https://openrouter.ai/models) for available models.
 
 Results are saved to `llm_judge_results/llm_judge_evaluation_YYYYMMDD_HHMMSS.json` with:
 - Individual question evaluations
-- Scores on 5 dimensions (Accuracy, Completeness, Relevance, Clarity, Citation Quality)
+- Scores on 3 dimensions (Retrieval Relevance, Faithfulness, Answer Quality)
 - Summary statistics per model
 - Response times and citation counts
 
 ## Evaluation Criteria
 
 Each answer is scored 1-5 on:
-1. **Accuracy**: Factual correctness
-2. **Completeness**: How fully the question is addressed
-3. **Relevance**: How relevant the answer is to the question
-4. **Clarity**: How clear and well-structured the answer is
-5. **Citation Quality**: Appropriateness and relevance of citations
+1. **Retrieval Relevance**: How relevant are the retrieved documents to the query? The judge model evaluates the relationship between the question and the retrieved content.
+2. **Faithfulness (Groundedness)**: Is the answer faithful to the retrieved context? Measures whether the answer is supported by the retrieved documents and avoids hallucination.
+3. **Answer Quality**: Overall quality of the answer in terms of clarity, completeness, and structure.
 
